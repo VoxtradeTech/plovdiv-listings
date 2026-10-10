@@ -6,6 +6,11 @@ on:
     - cron: "0 6 * * *"
     - cron: "0 10 * * *"
   workflow_dispatch:
+    inputs:
+      probe:
+        description: "Only check that imot.bg answers (writes nothing)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -22,11 +27,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Probe imot.bg
+        if: inputs.probe
+        run: python count_listings.py --probe
       - name: Count listings
+        if: ${{ !inputs.probe }}
         id: count
         continue-on-error: true
         run: python count_listings.py
       - name: Commit history and chart
+        if: ${{ !inputs.probe }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

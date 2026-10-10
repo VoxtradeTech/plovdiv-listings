@@ -103,6 +103,10 @@ def build_chart():
 
 
 if __name__ == "__main__":
+    if "--probe" in sys.argv:  # check imot.bg answers from this machine; writes nothing
+        u = url_for("sale", "Център", "офис")
+        print(f"{u}: {fetch_count(u)}")
+        sys.exit(0)
     errs = [] if "--chart-only" in sys.argv else count_today(load_history())
     build_chart()
     sys.exit(1 if errs else 0)
