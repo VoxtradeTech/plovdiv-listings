@@ -1,0 +1,38 @@
+name: Daily count
+
+on:
+  schedule:
+    # 06:00 UTC = 09:00 in Plovdiv (summer); the 10:00 UTC run is a retry, already-recorded counts are skipped
+    - cron: "0 6 * * *"
+    - cron: "0 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-count
+  cancel-in-progress: false
+
+jobs:
+  count:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Count listings
+        id: count
+        continue-on-error: true
+        run: python count_listings.py
+      - name: Commit history and chart
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add history.csv docs/index.html
+          git diff --cached --quiet || git commit -m "Counts for $(TZ=Europe/Sofia date +%F)"
+          git push
+      - name: Fail if any count failed
+        if: steps.count.outcome == 'failure'
+        run: exit 1
